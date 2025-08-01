@@ -1,0 +1,77 @@
+import threading
+import cv2
+from deepface import DeepFace
+import time
+from graphics import *
+
+
+
+
+lastcheck_time = 0
+facematchlock = threading.Lock()
+# the zero tells it to what camera to use and since the laptop only has one 0 stands for the webcam
+cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+# sets the size of the frames for width and height
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+# the counter is used to start a new response after a set amount of frames
+counter = 0
+
+facematch = False
+# Reads the image
+reference_img = cv2.imread("Jesse.jpg")
+if reference_img is None:
+    print("Error: reference image not found!")
+    exit()
+
+reference_img_colored = cv2.cvtColor(reference_img.copy(), cv2.COLOR_BGR2RGB)
+# the function used to check the matches
+def check_face(frame):
+    global facematch
+    try:
+        
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        reference_rgb = cv2.cvtColor(reference_img.copy(), cv2.COLOR_BGR2RGB)
+        result = DeepFace.verify(frame_rgb, reference_rgb, detector_backend='opencv')
+        facematch = result['verified']
+        
+    except (ValueError, KeyError, TypeError):
+       with facematchlock:
+           facematch = False
+
+
+while True:
+    # if there is a return it will read what was returned and then the frame for it as well 
+    ret, frame = cap.read()
+    if ret:
+        currenttime = time.time()
+        if currenttime - lastcheck_time >= 1:
+            try:
+                # args is a tuple but python won't turn it into a tuple so you have to pass the comma at the end to pass it as a tuple.
+                thread = threading.Thread(target=check_face(frame), args=(frame.copy(),))
+                thread.start()
+                lastcheck_time = currenttime
+            except ValueError:
+                # deepface throws a error everytime there is no face match so you have to pass on the error for it to keep checking. 
+                pass
+        if facematch:
+            # puttext will tell it to write a frame, 20/450 tells what frame to write on, FONTHERSH sets the font, 2 sets the size of font, the 0,255,0 sets the color in bgr, 3 sets the thickness.
+            break
+        else:
+            facematch = False
+            break 
+        # allows the user to break out 
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+if __name__ == '__main__':
+    
+    if facematch:
+        window = Tk()
+
+        app = StockGate(window)
+        
+        window.mainloop()
+    else:
+        print("UNIDENTIFIED USER")
