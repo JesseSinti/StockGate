@@ -1,0 +1,315 @@
+from tkinter import *
+import os
+
+
+
+class StockGate:
+    def __init__(self, window):
+        self.window = window
+        self.window.title("StockGate")
+        self.window.geometry("760x840")
+        self.window.config(bg="gold")
+        self.create_widgets()
+        self.inventory = {}
+    def add_product_to_inventory(self, name, qty):
+        if name in self.inventory:
+            self.inventory[name] += qty
+        else:
+            self.inventory[name] = qty
+
+    def create_widgets(self):
+       icon = PhotoImage(file="logo.png")
+       self.window.iconphoto(True,icon)
+       
+       self.label = Label(self.window,
+              text="Welcome to STOCKGATE",
+              font=("Arial",30, "bold"),
+              fg= "black",
+              bg="gold")
+                   
+       self.label.pack(pady=10)
+       self.instructions = Label(self.window,
+            text="What would you like to do?",
+            font=("Arial",12,"bold"),
+            fg="black",
+            bg="gold")
+       self.instructions.pack(pady=10)
+   
+       self.add_button = Button(self.window,
+                text="Add product",
+                font=("Arial", 15),
+                bg="black",
+                fg="gold",
+                command=self.add_product)
+       self.add_button.pack(pady=10)
+
+       self.remove_button = Button(self.window,
+                text="Remove product",
+                font=("Arial",15),
+                    bg="black",
+                    fg="gold",
+                    command=self.remove_product)
+       self.remove_button.pack(pady=10)
+
+       self.search_button = Button(self.window,
+                text="Search",
+                font=("Arial",15),
+                bg="black",
+                fg="gold",
+                command=self.get_product)
+       self.search_button.pack(pady=10)
+
+       self.displayall = Button(self.window,
+                text="Display all products and quantity",
+                font=("Arial", 15),
+                bg="black",
+                fg="gold",
+                command=self.get_all)
+       self.displayall.pack(pady=10)
+        
+    def add_product(self):
+            self.window.withdraw()
+            
+            add_window = Toplevel(self.window)
+            
+            add_window.title("StockGate")
+            add_window.geometry("760x840")
+            add_window.config(bg="gold")
+            
+
+            label = Label(add_window,text="Inventory Addition",
+                font=("Arial",30, "bold"),
+                fg="black",
+                bg="gold")
+            
+            label.pack(pady=10)
+
+            text = Label(add_window,
+                        text="Add a new product.",
+                        font=("Arial", 15),
+                        bg="black",
+                        fg="gold")
+            text.pack(pady=10)
+
+            item = Label(add_window,
+                        text="Product:",
+                        font=("Arial", 15),
+                        bg="black",
+                        fg="gold")
+            item.pack(pady=10)
+            product_entry = Entry(add_window)
+            product_entry.pack()
+
+            quant = Label(add_window,
+                        text="Enter the quantity",
+                        font=("Arial", 15),
+                        bg="black",
+                        fg="gold")
+            quant.pack(pady=10)
+            quantity_entry = Entry(add_window)
+            quantity_entry.pack()
+
+            result_label = Label(add_window, 
+                                text="", 
+                                bg="gold", 
+                                fg="red")
+            result_label.pack(pady=10)
+
+            def save_product():
+                product = product_entry.get()
+                quant = int(quantity_entry.get())
+                self.add_product_to_inventory(product, quant)
+                result_label.config(text=f"Saved {quant} {product} to system")
+
+                
+            
+            Button(add_window, text="Save", command=save_product).pack(pady=10)
+            Button(add_window, text="Close", command=lambda: [add_window.destroy(), self.window.deiconify()]).pack()
+        
+
+
+
+            
+    
+    def remove_product(self):
+            self.window.withdraw()
+
+            remove_window = Toplevel(self.window)
+            remove_window.title("Remove Product")
+            remove_window.geometry("760x840")
+            remove_window.config(bg="gold")
+
+            Label(remove_window,
+                text="Remove Product",
+                font=("Arial", 30, "bold"),
+                fg="black",
+                    bg="gold").pack(pady=10)
+
+            Label(remove_window,
+                text="Product Name:",
+                font=("Arial", 15),
+                bg="black",
+                    fg="gold").pack(pady=10)
+            product_entry = Entry(remove_window)
+            product_entry.pack()
+
+            # Radio button choice: full remove vs quantity remove
+            remove_mode = StringVar(value="quantity")  # default is remove quantity
+
+            Radiobutton(remove_window,
+                        text="Remove Quantity",
+                        variable=remove_mode,
+                        value="quantity",
+                        bg="gold").pack()
+
+            Radiobutton(remove_window,
+                        text="Remove Entire Product",
+                        variable=remove_mode,
+                        value="full",
+                        bg="gold").pack()
+
+            # Quantity input
+            quantity_label = Label(remove_window,
+                                text="Quantity to Remove:",
+                                font=("Arial", 15),
+                                bg="black", 
+                                fg="gold")
+            quantity_label.pack(pady=10)
+            quantity_entry = Entry(remove_window)
+            quantity_entry.pack()
+
+            # Result message
+            result_label = Label(remove_window, 
+                                text="", 
+                                bg="gold", 
+                                fg="red")
+            result_label.pack(pady=10)
+
+            def remove_from_inventory():
+                product = product_entry.get()
+                mode = remove_mode.get()
+
+                if product not in self.inventory:
+                    result_label.config(text=f"{product} not found.")
+                    return
+
+                if mode == "full":
+                    del self.inventory[product]
+                    result_label.config(text=f"{product} removed entirely.")
+                else:
+                    try:
+                        qty_to_remove = int(quantity_entry.get())
+                        if self.inventory[product] > qty_to_remove:
+                            self.inventory[product] -= qty_to_remove
+                            result_label.config(text=f"Removed {qty_to_remove} from {product}.")
+                        else:
+                            del self.inventory[product]
+                            result_label.config(text=f"{product} removed (quantity hit zero).")
+                    except ValueError:
+                        result_label.config(text="Enter a valid quantity.")
+
+            Button(remove_window, text="Remove",
+                    command=remove_from_inventory).pack(pady=10)
+            Button(remove_window,
+                    text="Close",
+                command=lambda: [remove_window.destroy(),
+                    self.window.deiconify()]).pack()
+    
+    def get_product(self):
+            self.window.withdraw()
+            
+            search_window = Toplevel(self.window)
+            
+            search_window.title("StockGate")
+            search_window.geometry("760x840")
+            search_window.config(bg="gold")
+            
+
+            label = Label(search_window,text="Product Search",
+                font=("Arial",30, "bold"),
+                fg="black",
+                bg="gold")
+            
+            label.pack(pady=10)
+
+            text = Label(search_window,
+                        text="What product would you like to find?",
+                        font=("Arial", 15),
+                        bg="black",
+                        fg="gold")
+            text.pack(pady=10)
+
+            item = Label(search_window,
+                        text="Product:",
+                        font=("Arial", 15),
+                        bg="black",
+                        fg="gold")
+            item.pack(pady=10)
+            product_entry = Entry(search_window)
+            product_entry.pack()
+
+            result_label = Label(search_window, 
+                                text="", 
+                                bg="gold", 
+                                fg="red")
+            result_label.pack(pady=10)
+            
+            def search_product():
+                product = product_entry.get()
+                if product in self.inventory.keys():
+                    quantity = self.inventory[product]
+                    result_label.config(text=f"Product: {product}; Quantity: {quantity}")
+                else:
+                    result_label.config(text=f"{product} was not found")
+                
+            
+            Button(search_window, text="Search", command=search_product).pack(pady=10)
+            Button(search_window, text="Close", command=lambda: [search_window.destroy(), self.window.deiconify()]).pack()
+            
+    
+    def get_all(self):
+            self.window.withdraw()
+            
+            all_window = Toplevel(self.window)
+            
+            all_window.title("StockGate")
+            all_window.geometry("760x840")
+            all_window.config(bg="gold")
+            
+
+            label = Label(all_window,text="Inventory List",
+                font=("Arial",30, "bold"),
+                fg="black",
+                bg="gold")
+            
+            label.pack(pady=10)
+            
+            list_box = Listbox(all_window, 
+                            width=60, 
+                            height=20,
+                            font=("Arial", 12, "bold"))
+            
+            list_box.pack(pady=10)
+
+
+            if self.inventory:
+                for product, qty in self.inventory.items():
+                    list_box.insert(END, f"{product} : {qty}\n")
+            else:
+                list_box.insert(END, "Inventory is empty.\n")
+
+            list_box.config(state=DISABLED)
+
+            Button(all_window, text="Close",
+            command=lambda: [all_window.destroy(), 
+                                self.window.deiconify()]).pack(pady=10)
+
+    # widgets = GUI elements: buttons, textboxes, labels, images
+    # windows = serves as a container to hold or contain these widgets
+    # instantiates an instance of a window
+if __name__ == '__main__':
+    window = Tk()
+
+    app = StockGate(window)
+        
+    window.mainloop()
